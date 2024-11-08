@@ -1,0 +1,40 @@
+
+*************************Get AD Objects Not in AAD and Get AAD Objects Not in AD***********************
+
+Connect-AzureAD
+
+Import-Module ActiveDirectory
+
+$adComputers = Get-ADComputer -Filter * -Property Name, ObjectGUID | Select-Object Name, ObjectGUID
+
+$aadDevices = Get-AzureADDevice -All $true | Where-Object { $_.DeviceTrustType -eq "ServerAd" } | Select-Object DisplayName, DeviceId
+
+$adNotInAad = $adComputers | Where-Object {$aadDevices.DisplayName -notcontains $_.Name}
+
+$aadNotInAd = $aadDevices | Where-Object {$adComputers.Name -notcontains $_.DisplayName}
+
+# Export to CSV files
+$adNotInAad | Export-Csv -Path "C:\Temp\AD_Not_In_AAD.csv" -NoTypeInformation -Encoding UTF8
+$aadNotInAd | Export-Csv -Path "C:\Temp\AAD_Not_In_AD.csv" -NoTypeInformation -Encoding UTF8
+
+*******************************************************************************************************
+
+*************************Get All Hybrid Joined Devices*************************************************
+
+Connect-AzureAD
+
+Import-Module ActiveDirectory
+
+$adComputers = Get-ADComputer -Filter * -Property Name, ObjectGUID | Select-Object Name, ObjectGUID
+
+$aadDevices = Get-AzureADDevice -All $true | Where-Object { $_.DeviceTrustType -eq "ServerAd" } | Select-Object DisplayName, DeviceId
+
+$hybridJoinedDevices = $adComputers | Where-Object {$aadDevices.DeviceId -contains $_.ObjectGUID.Guid}
+
+$notHybridJoinedDevices = $adComputers | Where-Object {$aadDevices.DeviceId -notcontains $_.ObjectGUID.Guid}
+
+# Export results to CSV
+$hybridJoinedDevices | Export-Csv -Path "C:\Temp\Hybrid_Joined_AD_Devices.csv" -NoTypeInformation -Encoding UTF8
+$notHybridJoinedDevices | Export-Csv -Path "C:\Temp\Not_Hybrid_Joined_AD_Devices.csv" -NoTypeInformation -Encoding UTF8
+
+*******************************************************************************************************
